@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monthly Report - FitTrack</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .report-page {
+      margin-left: 240px;
+      padding: 30px;
+      background: #f1f7f3;
+      min-height: 100vh;
+    }
+
+    .report-heading { color: #164c39; }
+    .report-subtitle { color: #718579; margin-bottom: 25px; }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 18px;
+      margin: 25px 0;
+    }
+
+    .report-card {
+      background: white;
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px #0000000d;
+    }
+
+    .report-card p { color: #718579; margin: 0 0 12px; }
+    .report-card h2 { color: #176747; margin: 0; font-size: 28px; }
+
+    .report-section {
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      margin-top: 22px;
+      box-shadow: 0 3px 12px #0000000d;
+    }
+
+    .report-section h2 { color: #164c39; }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .report-table th, .report-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e5eee8;
+      text-align: left;
+    }
+
+    .report-table th {
+      background: #eaf5ee;
+      color: #164c39;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .report-actions button {
+      border: none;
+      padding: 11px 18px;
+      border-radius: 8px;
+      background: #176747;
+      color: white;
+      cursor: pointer;
+    }
+
+    .report-actions button:hover { background: #104c34; }
+
+    .report-chart {
+      width: 100%;
+      max-height: 350px;
+    }
+
+    @media(max-width: 768px) {
+      .report-page { margin-left: 0; padding: 18px; }
+    }
+
+    @media print {
+      .sidebar, .report-actions { display: none !important; }
+      .report-page { margin: 0; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <aside class="sidebar">
+    <h2>💚 FitTrack</h2>
+    <nav>
+      <a href="index.html">🏠 Dashboard</a>
+      <a href="profile.html">👤 My Profile</a>
+      <a href="achievements.html">🏆 Achievements</a>
+      <a href="water.html">💧 Water Tracker</a>
+      <a href="history.html">📋 Activity History</a>
+      <a href="report.html" class="active">📊 Monthly Report</a>
+    </nav>
+  </aside>
+
+  <main class="report-page">
+
+    <h1 class="report-heading">📊 Monthly Fitness Report</h1>
+    <p class="report-subtitle">
+      Track your monthly fitness performance and progress.
+    </p>
+
+    <label for="reportMonth">Select Month:</label>
+    <input type="month" id="reportMonth">
+
+    <div class="report-grid">
+
+      <div class="report-card">
+        <p>Total Activities</p>
+        <h2 id="totalActivities">0</h2>
+      </div>
+
+      <div class="report-card">
+        <p>Total Steps</p>
+        <h2 id="totalSteps">0</h2>
+      </div>
+
+      <div class="report-card">
+        <p>Calories Burned</p>
+        <h2 id="totalCalories">0</h2>
+      </div>
+
+      <div class="report-card">
+        <p>Distance Covered</p>
+        <h2 id="totalDistance">0 km</h2>
+      </div>
+
+      <div class="report-card">
+        <p>Average Daily Steps</p>
+        <h2 id="averageSteps">0</h2>
+      </div>
+
+      <div class="report-card">
+        <p>Exercise Duration</p>
+        <h2 id="totalDuration">0 min</h2>
+      </div>
+
+    </div>
+
+    <section class="report-section">
+      <h2>📈 Daily Steps Performance</h2>
+      <canvas id="monthlyChart" class="report-chart"></canvas>
+    </section>
+
+    <section class="report-section">
+      <h2>📋 Monthly Activity Details</h2>
+      <div style="overflow-x:auto;">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Exercise</th>
+              <th>Steps</th>
+              <th>Calories</th>
+              <th>Distance</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="monthlyHistory"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="report-actions">
+      <button onclick="window.print()">🖨️ Download / Print Report</button>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const allRecords =
+      JSON.parse(localStorage.getItem("fitnessRecords")) || [];
+
+    const monthInput = document.getElementById("reportMonth");
+    const today = new Date();
+
+    monthInput.value =
+      today.getFullYear() + "-" +
+      String(today.getMonth() + 1).padStart(2, "0");
+
+    let monthlyChart;
+
+    function generateReport() {
+      const selectedMonth = monthInput.value;
+
+      const records = allRecords.filter(record =>
+        record.date &&
+        record.date.substring(0, 7) === selectedMonth
+      );
+
+      const totalActivities = records.length;
+
+      const totalSteps = records.reduce(
+        (sum, record) => sum + Number(record.steps || 0), 0
+      );
+
+      const totalCalories = records.reduce(
+        (sum, record) => sum + Number(record.calories || 0), 0
+      );
+
+      const totalDistance = records.reduce(
+        (sum, record) => sum + Number(record.distance || 0), 0
+      );
+
+      const totalDuration = records.reduce(
+        (sum, record) => sum + Number(record.duration || 0), 0
+      );
+
+      const activeDays = new Set(records.map(record => record.date)).size;
+
+      const averageSteps = activeDays
+        ? Math.round(totalSteps / activeDays)
+        : 0;
+
+      document.getElementById("totalActivities").textContent =
+        totalActivities;
+
+      document.getElementById("totalSteps").textContent =
+        totalSteps.toLocaleString("en-IN");
+
+      document.getElementById("totalCalories").textContent =
+        Math.round(totalCalories);
+
+      document.getElementById("totalDistance").textContent =
+        totalDistance.toFixed(1) + " km";
+
+      document.getElementById("averageSteps").textContent =
+        averageSteps.toLocaleString("en-IN");
+
+      document.getElementById("totalDuration").textContent =
+        totalDuration + " min";
+
+      const history = document.getElementById("monthlyHistory");
+
+      if (records.length === 0) {
+        history.innerHTML =
+          '<tr><td colspan="6">No activities recorded for this month.</td></tr>';
+      } else {
+        history.innerHTML = records.map(record => `
+          <tr>
+            <td>${record.date || "-"}</td>
+            <td>${record.exerciseName || record.exerciseType || "-"}</td>
+            <td>${Number(record.steps || 0).toLocaleString("en-IN")}</td>
+            <td>${Math.round(Number(record.calories || 0))}</td>
+            <td>${Number(record.distance || 0).toFixed(1)} km</td>
+            <td>${Number(record.duration || 0)} min</td>
+          </tr>
+        `).join("");
+      }
+
+      const dailySteps = {};
+
+      records.forEach(record => {
+        dailySteps[record.date] =
+          (dailySteps[record.date] || 0) +
+          Number(record.steps || 0);
+      });
+
+      const labels = Object.keys(dailySteps).sort();
+      const values = labels.map(date => dailySteps[date]);
+
+      const ctx = document.getElementById("monthlyChart");
+
+      if (monthlyChart) {
+        monthlyChart.destroy();
+      }
+
+      monthlyChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Daily Steps",
+            data: values,
+            backgroundColor: "#36a879",
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Number of Steps"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    monthInput.addEventListener("change", generateReport);
+
+    generateReport();
+  </script>
+<script src="notifications.js"></script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Tracker | FitTrack</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+body {
+  background: #f1f7f3;
+  font-family: Arial, sans-serif;
+}
+.water-page {
+  padding: 30px;
+}
+.water-heading {
+  color: #164c39;
+  margin-bottom: 8px;
+}
+.water-subtitle {
+  color: #718579;
+  margin-bottom: 28px;
+}
+.water-hero {
+  background: linear-gradient(120deg, #145c43, #36a879);
+  color: white;
+  padding: 30px;
+  border-radius: 20px;
+  margin-bottom: 25px;
+}
+.water-hero h2 { color: white; }
+.water-hero p { color: #e2f5e9; }
+.water-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.water-card {
+  background: white;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 5px 20px rgba(20,70,45,.07);
+}
+.water-card h3 { color: #164c39; }
+.progress-circle {
+  width: 175px;
+  height: 175px;
+  border-radius: 50%;
+  background: conic-gradient(#28a477 0%, #e6eee9 0%);
+  display: grid;
+  place-items: center;
+  margin: 20px auto;
+}
+.progress-inner {
+  width: 145px;
+  height: 145px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.progress-inner strong {
+  font-size: 30px;
+  color: #176044;
+}
+.progress-inner span { color: #718579; }
+.water-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.water-actions button {
+  border: none;
+  background: #21845e;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.water-actions button:hover {
+  background: #145c43;
+}
+.water-actions .reset-btn {
+  background: #eaf2ed;
+  color: #176044;
+}
+.glass-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+.glass {
+  background: #edf7f1;
+  border-radius: 12px;
+  padding: 14px 5px;
+  text-align: center;
+  color: #287a57;
+  font-size: 25px;
+}
+.glass small {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.water-tip {
+  background: #e8f5ed;
+  color: #236746;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+@media(max-width:768px) {
+  .water-page { padding: 15px; }
+  .water-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <h2>💚 FitTrack</h2>
+  <nav>
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="profile.html">👤 My Profile</a>
+    <a href="achievements.html">🏆 Achievements</a>
+    <a href="water.html" class="active">💧 Water Tracker</a>
+    <a href="history.html">📋 Activity History</a>
+    <a href="report.html">📊 Monthly Report</a>
+  </nav>
+</aside>
+
+<main class="container water-page">
+
+  <h1 class="water-heading">💧 Water Tracker</h1>
+  <p class="water-subtitle">Stay hydrated. Stay healthy. Keep moving!</p>
+
+  <section class="water-hero">
+    <h2>Your Daily Hydration Goal</h2>
+    <p>Small sips today, better health tomorrow.</p>
+    <h1>8 Glasses / Day</h1>
+  </section>
+
+  <div class="water-grid">
+
+    <section class="water-card">
+      <h3>Today's Progress</h3>
+      <div class="progress-circle" id="progressCircle">
+        <div class="progress-inner">
+          <strong id="waterCount">0</strong>
+          <span>of 8 glasses</span>
+        </div>
+      </div>
+      <p id="waterMessage" style="text-align:center;color:#718579;">
+        Start drinking water!
+      </p>
+      <div class="water-actions">
+        <button onclick="addWater()">+ Add 1 Glass</button>
+        <button class="reset-btn" onclick="resetWater()">Reset</button>
+      </div>
+    </section>
+
+    <section class="water-card">
+      <h3>Hydration Schedule</h3>
+      <p style="color:#718579;">Your daily water checklist</p>
+      <div class="glass-list" id="glassList">
+        <div class="glass">🥛<small>Glass 1</small></div>
+        <div class="glass">🥛<small>Glass 2</small></div>
+        <div class="glass">🥛<small>Glass 3</small></div>
+        <div class="glass">🥛<small>Glass 4</small></div>
+        <div class="glass">🥛<small>Glass 5</small></div>
+        <div class="glass">🥛<small>Glass 6</small></div>
+        <div class="glass">🥛<small>Glass 7</small></div>
+        <div class="glass">🥛<small>Glass 8</small></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="water-tip">
+    💚 <strong>Healthy Tip:</strong>
+    Drink water regularly throughout the day. Your hydration needs may vary.
+  </div>
+
+</main>
+
+<script>
+let waterCount = Number(localStorage.getItem("waterCount")) || 0;
+
+function updateWaterDisplay() {
+  waterCount = Math.min(Math.max(waterCount, 0), 8);
+
+  document.getElementById("waterCount").textContent = waterCount;
+
+  let percentage = waterCount / 8 * 100;
+
+  document.getElementById("progressCircle").style.background =
+    `conic-gradient(#28a477 ${percentage}%, #e6eee9 ${percentage}%)`;
+
+  document.getElementById("waterMessage").textContent =
+    waterCount >= 8
+      ? "Amazing! Daily goal completed! 🎉"
+      : `${8 - waterCount} glasses left to reach your goal.`;
+
+  document.querySelectorAll(".glass").forEach((glass, index) => {
+    glass.style.background = index < waterCount ? "#c9eed8" : "#edf7f1";
+    glass.style.border = index < waterCount
+      ? "2px solid #28a477"
+      : "2px solid transparent";
+  });
+}
+
+function addWater() {
+  if (waterCount < 8) {
+    waterCount++;
+
+    localStorage.setItem("waterCount", waterCount);
+    updateWaterDisplay();
+
+    if (waterCount === 8) {
+      addFitTrackNotification(
+        "💧 Hydration Goal Completed!",
+        "Amazing! You completed your 8 glasses water goal today!"
+      );
+    } else {
+      addFitTrackNotification(
+        "💧 Water Intake Updated",
+        "You have completed " + waterCount + " out of 8 glasses!"
+      );
+    }
+  } else {
+    alert("Your daily water goal is already completed!");
+  }
+}
+
+
+function resetWater() {
+  waterCount = 0;
+  localStorage.setItem("waterCount", waterCount);
+  updateWaterDisplay();
+}
+
+updateWaterDisplay();
+</script>
+<script src="notifications.js"></script>
+</body>
+</html>
